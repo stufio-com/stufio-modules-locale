@@ -1,0 +1,20 @@
+node [shape=record];
+
+locale_module [label="{Locale Module|{API|CRUD|Models|Schemas|Services|Migrations|Middleware|Tests}}"];
+api [label="{API|locales.py|translations.py|admin_locales.py|admin_translations.py}"];
+crud [label="{CRUD|crud_locale.py|crud_translation.py}"];
+models [label="{Models|locale.py|translation.py}"];
+schemas [label="{Schemas|locale.py|translation.py}"];
+services [label="{Services|cache_service.py}"];
+migrations [label="{Migrations|v20250501|01_init_collections.py|02_create_indexes.py|03_create_default_locales.py}"];
+middleware [label="{Middleware|locale_middleware.py}"];
+tests [label="{Tests|conftest.py|test_api_locales.py|test_api_translations.py}"];
+
+locale_module -> api;
+locale_module -> crud;
+locale_module -> models;
+locale_module -> schemas;
+locale_module -> services;
+locale_module -> migrations;
+locale_module -> middleware;
+locale_module -> tests;
