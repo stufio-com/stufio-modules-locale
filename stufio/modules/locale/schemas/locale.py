@@ -1,7 +1,7 @@
 from datetime import datetime
 from pydantic import BaseModel, Field
 from typing import Optional
-
+from odmantic import ObjectId
 
 # Locale schemas
 class LocaleBase(BaseModel):
@@ -33,17 +33,12 @@ class LocaleUpdate(BaseModel):
 
 class LocaleInDB(LocaleBase):
     """Schema for locale responses that include database fields."""
-    id: str = Field(..., description="The locale ID")
-    created_at: datetime
-    updated_at: datetime
+    id: Optional[ObjectId] = Field(None, description="The locale ID")
+    created_at: Optional[datetime] = Field(None, description="When this locale was created")
+    updated_at: Optional[datetime] = Field(None, description="When this locale was last updated")
 
     class Config:
         from_attributes = True
-
-
-# For backward compatibility
-class Locale(LocaleInDB):
-    pass
 
 
 class LocaleResponse(LocaleInDB):

@@ -71,11 +71,6 @@ class TranslationInDB(TranslationBase):
     )
 
 
-# For backward compatibility
-class Translation(TranslationInDB):
-    pass
-
-
 class TranslationResponse(TranslationInDB):
     """Schema for translation responses in the API."""
     pass

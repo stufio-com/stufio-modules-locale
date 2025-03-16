@@ -1,6 +1,8 @@
 from motor.core import AgnosticDatabase
 from stufio.core.migrations.base import MongoMigrationScript
+from stufio.db.mongo import get_engine
 from ...config import LocaleSettings
+from ...models.locale import Locale
 
 
 class AddSupportedLocales(MongoMigrationScript):
@@ -10,9 +12,9 @@ class AddSupportedLocales(MongoMigrationScript):
     order = 40
 
     async def run(self, db: AgnosticDatabase) -> None:
-        locales_collection = db.i18n_locales
+        engine = get_engine()
         locale_settings = LocaleSettings()
-        
+
         # Map of language codes to their full names
         language_names = {
             "en": "English",
@@ -74,16 +76,19 @@ class AddSupportedLocales(MongoMigrationScript):
         # Create locales for all supported languages in config
         for code in locale_settings.SUPPORTED_LOCALES:
             name = language_names.get(code, code.upper())
-            locale = {
-                "code": code,
-                "name": name,
-                "localized_name": localized_names.get(code, name),
-                "details": f"{name} locale",
-                "active": True,
-                "sort_order": 0
-            }
-            
-            # Insert if not exists
-            existing = await locales_collection.find_one({"code": code})
+            localized = localized_names.get(code, name)
+
+            # Check if locale already exists
+            existing = await engine.find_one(Locale, Locale.code == code)
+
             if not existing:
-                await locales_collection.insert_one(locale)
+                # Create new locale using the model
+                locale = Locale(
+                    code=code,
+                    name=name,
+                    localized_name=localized,
+                    details=f"{name} language",
+                    active=True,
+                    sort_order=0
+                )
+                await engine.save(locale)

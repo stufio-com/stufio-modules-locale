@@ -19,12 +19,10 @@ async def create_locale(
 
 @router.get("/locales", response_model=List[LocaleResponse])
 async def read_locales(
-    skip: int = 0, 
-    limit: int = 100,
     db = Depends(deps.get_db),
     current_user: str = Depends(deps.get_current_active_superuser)
 ):
-    return await crud_locale.get_all(db=db, skip=skip, limit=limit)
+    return await crud_locale.get_all(db=db, limit=None)
 
 
 @router.get("/locales/{locale_id}", response_model=LocaleResponse)
