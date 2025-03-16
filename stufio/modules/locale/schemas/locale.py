@@ -38,14 +38,14 @@ class LocaleInDB(LocaleBase):
     updated_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # For backward compatibility
 class Locale(LocaleInDB):
     pass
 
-    
+
 class LocaleResponse(LocaleInDB):
     """Schema for locale responses."""
     pass

@@ -1,79 +1,79 @@
-from typing import List
+from typing import List, Optional, Dict, Any, Union
 from motor.core import AgnosticDatabase
 from ..models.locale import Locale
 from ..schemas.locale import LocaleCreate, LocaleUpdate
-from stufio.api.deps import get_db
-from fastapi import HTTPException, Depends
+from stufio.crud.mongo_base import CRUDMongoBase
 
 
-async def create_locale(
-    locale: LocaleCreate, db: AgnosticDatabase = Depends(get_db)
-) -> Locale:
-    existing_locale = await db.i18n_locales.find_one({"name": locale.name})
-    if existing_locale:
-        raise HTTPException(status_code=400, detail="Locale already exists")
-    new_locale = await db.i18n_locales.insert_one(locale.dict())
-    return await db.i18n_locales.find_one({"_id": new_locale.inserted_id})
+class CRUDLocale(CRUDMongoBase[Locale, LocaleCreate, LocaleUpdate]):
+    async def create(self, db: AgnosticDatabase, *, obj_in: LocaleCreate) -> Optional[Locale]:
+        existing_locale = await db.i18n_locales.find_one({"name": obj_in.name})
+        if existing_locale:
+            return None
 
+        locale_data = obj_in.dict()
+        new_locale = await db.i18n_locales.insert_one(locale_data)
+        return await db.i18n_locales.find_one({"_id": new_locale.inserted_id})
 
-async def get_locale(locale_id: str, db: AgnosticDatabase = Depends(get_db)) -> Locale:
-    locale = await db.i18n_locales.find_one({"_id": locale_id})
-    if not locale:
-        raise HTTPException(status_code=404, detail="Locale not found")
-    return locale
+    async def get(self, db: AgnosticDatabase, locale_id: str) -> Optional[Locale]:
+        locale = await db.i18n_locales.find_one({"_id": locale_id})
+        if not locale:
+            return None
+        return locale
 
-
-async def get_all_locales(
-    skip: int = 0, limit: int = 100, db: AgnosticDatabase = Depends(get_db)
-) -> List[Locale]:
-    """
-    Retrieve all locales with optional pagination.
-    
-    Args:
-        skip: Number of records to skip
-        limit: Maximum number of records to return
-        db: Database connection
+    async def get_all(self, db: AgnosticDatabase, *, skip: int = 0, limit: int = 100) -> List[Locale]:
+        """
+        Retrieve all locales with optional pagination.
         
-    Returns:
-        List of locales
-    """
-    cursor = db.i18n_locales.find().skip(skip).limit(limit)
-    return await cursor.to_list(length=limit)
+        Args:
+            skip: Number of records to skip
+            limit: Maximum number of records to return
+            db: Database connection
+            
+        Returns:
+            List of locales
+        """
+        cursor = db.i18n_locales.find().skip(skip).limit(limit)
+        return await cursor.to_list(length=limit)
 
-
-async def get_active_locales(
-    skip: int = 0, limit: int = 100, db: AgnosticDatabase = Depends(get_db)
-) -> List[Locale]:
-    """
-    Retrieve only active locales with optional pagination.
-    
-    Args:
-        skip: Number of records to skip
-        limit: Maximum number of records to return
-        db: Database connection
+    async def get_active(self, db: AgnosticDatabase, *, skip: int = 0, limit: int = 100) -> List[Locale]:
+        """
+        Retrieve only active locales with optional pagination.
         
-    Returns:
-        List of active locales
-    """
-    cursor = db.i18n_locales.find({"active": True}).sort([("sort_order", 1), ("name", 1)]).skip(skip).limit(limit)
-    return await cursor.to_list(length=limit)
+        Args:
+            skip: Number of records to skip
+            limit: Maximum number of records to return
+            db: Database connection
+            
+        Returns:
+            List of active locales
+        """
+        cursor = db.i18n_locales.find({"active": True}).sort([("sort_order", 1), ("name", 1)]).skip(skip).limit(limit)
+        return await cursor.to_list(length=limit)
+
+    async def update(
+        self, db: AgnosticDatabase, *, db_obj: Locale, obj_in: Union[LocaleUpdate, Dict[str, Any]]
+    ) -> Optional[Locale]:
+        if isinstance(obj_in, dict):
+            update_data = obj_in
+        else:
+            update_data = obj_in.dict(exclude_unset=True)
+
+        updated_locale = await db.i18n_locales.find_one_and_update(
+            {"_id": db_obj.id},
+            {"$set": update_data},
+            return_document=True
+        )
+        if not updated_locale:
+            return None
+        return updated_locale
+
+    async def delete(self, db: AgnosticDatabase, *, locale_id: str) -> Optional[Dict[str, str]]:
+        result = await db.i18n_locales.delete_one({"_id": locale_id})
+        if result.deleted_count == 0:
+            return None
+        return {"detail": "Locale deleted successfully"}
 
 
-async def update_locale(
-    locale_id: str, locale: LocaleUpdate, db: AgnosticDatabase = Depends(get_db)
-) -> Locale:
-    updated_locale = await db.i18n_locales.find_one_and_update(
-        {"_id": locale_id},
-        {"$set": locale.dict(exclude_unset=True)},
-        return_document=True
-    )
-    if not updated_locale:
-        raise HTTPException(status_code=404, detail="Locale not found")
-    return updated_locale
-
-
-async def delete_locale(locale_id: str, db: AgnosticDatabase = Depends(get_db)) -> dict:
-    result = await db.i18n_locales.delete_one({"_id": locale_id})
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Locale not found")
-    return {"detail": "Locale deleted successfully"}
+# Create a singleton instance
+crud_locale = CRUDLocale(Locale)

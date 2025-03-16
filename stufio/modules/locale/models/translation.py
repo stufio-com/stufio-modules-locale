@@ -1,20 +1,27 @@
-from pydantic import BaseModel, Field
+from datetime import datetime
 from typing import Optional
+from odmantic import Model, Field, Index
+from pydantic import ConfigDict
 
-class Translation(BaseModel):
-    module_name: str = Field(..., description="The name of the module the translation belongs to.")
-    key: str = Field(..., description="The key for the translation.")
-    value: str = Field(..., description="The translated value.")
-    locale: str = Field(..., description="The locale code (e.g., 'en', 'fr', 'es').")
-    details: Optional[str] = Field(None, description="Optional details about the translation.")
 
-    class Config:
-        schema_extra = {
-            "example": {
-                "module_name": "user_module",
-                "key": "welcome_message",
-                "value": "Welcome to our application!",
-                "locale": "en",
-                "details": "Displayed on the homepage."
-            }
-        }
+class Translation(Model):
+    """MongoDB model for translations."""
+    key: str = Field(description="The key for the translation", index=True)
+    locale: str = Field(description="The locale for the translation, e.g., 'en-US'", index=True)
+    module_name: str = Field(
+        default="",
+        description="The name of the module the translation belongs to", index=True
+    )
+    value: str = Field(description="The translated value")
+    details: Optional[str] = Field(default=None, description="Optional details about the translation")
+    discovered_at: Optional[datetime] = Field(default_factory=datetime.now)
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
+
+    model_config = ConfigDict(
+        collection="i18n_translations",
+        indexes=[
+            Index("key", "locale", "module_name", unique=True),
+            Index("key", "locale"),
+        ]
+    )

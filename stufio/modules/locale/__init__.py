@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from typing import List, Any, Tuple
 
 from stufio.core.module_registry import ModuleInterface
-from .api import api_router
+from .api import router as api_router
 from .models import Locale, Translation
 from .middleware import LocaleMiddleware
 from .__version__ import __version__
