@@ -1,6 +1,4 @@
-from gc import callbacks
-from operator import call
-from typing import List, Optional, Dict, Any, Union
+from typing import List
 from motor.core import AgnosticDatabase
 from ..models.locale import Locale
 from ..schemas.locale import LocaleCreate, LocaleUpdate

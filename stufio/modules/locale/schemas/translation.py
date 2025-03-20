@@ -1,88 +1,75 @@
 from datetime import datetime
-from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional, Dict, Any
+from pydantic import BaseModel, Field
+from typing import Dict, Optional, List
+from odmantic import ObjectId
+
+
+class LocaleTranslationBase(BaseModel):
+    """Base schema for locale translations with shared attributes."""
+    text: str = Field(..., description="The translated text")
+    module_overrides: Optional[Dict[str, str]] = Field(
+        default_factory=dict,
+        description="Module-specific overrides of this translation"
+    )
+    description: Optional[str] = Field(None, description="Optional description for this locale translation")
+
+
+class LocaleTranslationCreate(LocaleTranslationBase):
+    """Schema for creating a new locale translation."""
+    pass
+
+
+class LocaleTranslationUpdate(BaseModel):
+    """Schema for updating an existing locale translation."""
+    text: Optional[str] = None
+    module_overrides: Optional[Dict[str, str]] = None
+    description: Optional[str] = None
+
+
+class LocaleTranslationInDB(LocaleTranslationBase):
+    """Schema for locale translation responses that include database fields."""
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
 
 class TranslationBase(BaseModel):
     """Base schema for translations with shared attributes."""
-    locale: str = Field(
-        ..., 
-        description="The locale code for the translation, e.g., 'en'",
-        examples=["en", "fr", "es"]
+    key: str = Field(..., description="The translation key")
+    modules: List[str] = Field(
+        ..., description="Modules this translation applies to"
     )
-    key: str = Field(
-        ..., 
-        description="The key for the translation, usually in dot notation",
-        examples=["common.welcome", "errors.not_found"]
-    )
-    value: str = Field(
-        ..., 
-        description="The translated value",
-        examples=["Welcome to our app", "Page not found"]
-    )
-    module_name: str = Field(
-        ..., 
-        description="The name of the module the translation belongs to",
-        examples=["core", "auth", "products"]
-    )
-    details: Optional[str] = Field(
-        None, 
-        description="Optional details about the translation or context"
-    )
+    description: Optional[str] = Field(None, description="Optional description of this translation key")
 
 
 class TranslationCreate(TranslationBase):
     """Schema for creating a new translation."""
-    discovered_at: Optional[datetime] = Field(
-        None,
-        description="When this translation key was first discovered (auto-populated if None)"
-    )
+    translations: Dict[str, LocaleTranslationCreate] = Field(default_factory=dict)
 
 
 class TranslationUpdate(BaseModel):
     """Schema for updating an existing translation."""
-    value: Optional[str] = Field(None, description="The translated value")
-    details: Optional[str] = Field(None, description="Optional details about the translation")
-    active: Optional[bool] = Field(None, description="Whether this translation is active")
+    modules: Optional[List[str]] = None
+    description: Optional[str] = None
+    translations: Optional[Dict[str, LocaleTranslationUpdate]] = None
 
 
 class TranslationInDB(TranslationBase):
     """Schema for translation responses that include database fields."""
-    id: str = Field(..., description="The translation ID")
-    discovered_at: Optional[datetime] = Field(None, description="When this translation was first discovered")
-    created_at: datetime = Field(..., description="When this translation was created")
-    updated_at: datetime = Field(..., description="When this translation was last updated")
-    
-    model_config = ConfigDict(
-        from_attributes=True,
-        json_schema_extra={
-            "example": {
-                "id": "60d21b4967d0d8992e610c85",
-                "locale": "en",
-                "key": "common.welcome",
-                "value": "Welcome to our application",
-                "module_name": "core",
-                "details": "Shown on the homepage after login",
-                "discovered_at": "2025-03-15T10:00:00Z",
-                "created_at": "2025-03-15T10:30:00Z",
-                "updated_at": "2025-03-16T14:45:00Z"
-            }
-        }
-    )
+    id: Optional[ObjectId] = None
+    translations: Dict[str, LocaleTranslationInDB] = Field(default_factory=dict)
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
 
 
 class TranslationResponse(TranslationInDB):
-    """Schema for translation responses in the API."""
+    """Schema for translation responses."""
     pass
 
 
-class TranslationBulkImport(BaseModel):
-    """Schema for bulk importing multiple translations."""
-    translations: list[TranslationCreate] = Field(..., description="List of translations to import")
-    overwrite_existing: bool = Field(False, description="Whether to overwrite existing translations")
-
-
-class TranslationBulkExport(BaseModel):
-    """Schema for exported translations, grouped by locale."""
-    locale: str = Field(..., description="The locale code")
-    translations: Dict[str, str] = Field(..., description="Key-value pairs of translations")
+class ModuleOverrideUpdate(BaseModel):
+    """Schema for updating a module-specific translation."""
+    text: str = Field(..., description="The module-specific translation text")
+    module: str = Field(..., description="The module name for this override")

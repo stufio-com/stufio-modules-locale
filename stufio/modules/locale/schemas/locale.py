@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from odmantic import ObjectId
 
+
 # Locale schemas
 class LocaleBase(BaseModel):
     """Base schema for locales with shared attributes."""
@@ -20,15 +21,9 @@ class LocaleCreate(LocaleBase):
     pass
 
 
-class LocaleUpdate(BaseModel):
+class LocaleUpdate(LocaleBase):
     """Schema for updating an existing locale."""
-    code: Optional[str] = Field(None, description="The locale code, e.g., 'en'")
-    name: Optional[str] = Field(None, description="The name of the language, e.g., 'English'")
-    localized_name: Optional[str] = Field(None, description="Name of language in native translation")
-    country: Optional[str] = Field(None, description="The name of the country, e.g., 'US'")
-    details: Optional[str] = Field(None, description="Optional details about the locale")
-    active: Optional[bool] = Field(None, description="Whether this locale is active")
-    sort_order: Optional[int] = Field(None, description="Sort order (0 = alphabetical)")
+    pass
 
 
 class LocaleInDB(LocaleBase):

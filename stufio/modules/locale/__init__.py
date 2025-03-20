@@ -14,10 +14,10 @@ class LocaleModule(ModuleInterface):
 
     __version__ = __version__
 
-    def register_routes(self, app: FastAPI, router_prefix: str = None) -> None:
+    def register_routes(self, app: FastAPI) -> None:
         """Register this module's routes with the FastAPI app."""
         # Register routes
-        app.include_router(api_router, prefix=router_prefix)
+        app.include_router(api_router, prefix=self._routes_prefix)
 
     def get_middlewares(self) -> List[Tuple]:
         """Return middleware classes for this module.
@@ -25,7 +25,7 @@ class LocaleModule(ModuleInterface):
         Returns:
             List of (middleware_class, args, kwargs) tuples
         """
-        return [(LocaleMiddleware, {}, {})]
+        return [(LocaleMiddleware, {}, {})]  # Fix: use empty list for args
 
     # For backwards compatibility
     def register(self, app: FastAPI) -> None:

@@ -25,18 +25,20 @@ class CreateIndexes(MongoMigrationScript):
             ]
         })
 
-        # Create indexes for the translations collection
-        await db.command({
-            "createIndexes": "i18n_translations",
-            "indexes": [
-                {
-                    "key": {"module_name": 1},
-                    "name": "translation_module_lookup"
-                },
-                {
-                    "key": {"key": 1, "locale": 1, "module_name": 1},
-                    "name": "translation_unique_key",
-                    "unique": True
-                }
-            ]
-        })
+        # Create updated indexes for translations
+        await db.command(
+            {
+                "createIndexes": "i18n_translations",
+                "indexes": [
+                    {
+                        "key": {"key": 1},
+                        "name": "translation_key_unique",
+                        "unique": True,
+                    },
+                    {
+                        "key": {"modules": 1},
+                        "name": "translation_modules_lookup",
+                    },
+                ],
+            }
+        )

@@ -1,27 +1,41 @@
 from datetime import datetime
-from typing import Optional
-from odmantic import Model, Field, Index
+from typing import Dict, Optional, List
+from odmantic import Field, Index, EmbeddedModel
 from pydantic import ConfigDict
 
+from stufio.db.mongo_base import MongoBase, datetime_now_sec
 
-class Translation(Model):
-    """MongoDB model for translations."""
-    key: str = Field(description="The key for the translation", index=True)
-    locale: str = Field(description="The locale for the translation, e.g., 'en-US'", index=True)
-    module_name: str = Field(
-        default="",
-        description="The name of the module the translation belongs to", index=True
+
+class LocaleTranslation(EmbeddedModel):
+    """Embedded model for a translation in a specific locale."""
+    text: str = Field(description="The translated text")
+    module_overrides: Dict[str, str] = Field(
+        default_factory=dict,
+        description="Module-specific overrides of this translation"
     )
-    value: str = Field(description="The translated value")
-    details: Optional[str] = Field(default=None, description="Optional details about the translation")
-    discovered_at: Optional[datetime] = Field(default_factory=datetime.now)
-    created_at: datetime = Field(default_factory=datetime.now)
-    updated_at: datetime = Field(default_factory=datetime.now)
+    description: Optional[str] = Field(default=None, description="Optional description of this translation key")
+    created_at: datetime = Field(default_factory=datetime_now_sec)
+    updated_at: datetime = Field(default_factory=datetime_now_sec)
+
+
+class Translation(MongoBase):
+    """MongoDB model for translations with embedded locale translations."""
+    key: str = Field(description="The translation key", index=True)
+    modules: List[str] = Field(
+        default_factory=list, 
+        description="Additional modules this translation applies to (when shared)"
+    )
+    description: Optional[str] = Field(default=None, description="Optional description of this translation key")
+    translations: Dict[str, LocaleTranslation] = Field(
+        default_factory=dict, 
+        description="Dictionary of translations where key is locale code and value is the translation"
+    )
+    created_at: datetime = Field(default_factory=datetime_now_sec)
+    updated_at: datetime = Field(default_factory=datetime_now_sec)
 
     model_config = ConfigDict(
         collection="i18n_translations",
         indexes=[
-            Index("key", "locale", "module_name", unique=True),
-            Index("key", "locale"),
-        ]
+            Index("key", unique=True),
+        ],
     )
