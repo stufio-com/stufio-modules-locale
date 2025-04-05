@@ -5,13 +5,12 @@ from datetime import datetime, timezone
 
 from ..models.translation import Translation, LocaleTranslation
 from ..schemas.translation import LocaleTranslationCreate, TranslationCreate, TranslationUpdate
-from stufio.crud.mongo_base import CRUDMongoBase
+from stufio.crud.mongo_base import CRUDMongo
 
 
-class CRUDTranslation(CRUDMongoBase[Translation, TranslationCreate, TranslationUpdate]):
+class CRUDTranslation(CRUDMongo[Translation, TranslationCreate, TranslationUpdate]):
     async def get_by_locale(
         self,
-        db: AgnosticDatabase,
         locale: str,
         module_name: Optional[str] = None,
         *,
@@ -26,7 +25,6 @@ class CRUDTranslation(CRUDMongoBase[Translation, TranslationCreate, TranslationU
             module_name: Optional module name filter
             skip: Number of records to skip
             limit: Maximum number of records to return
-            db: Database connection
             
         Returns:
             List of Translation objects for the specified locale
@@ -38,18 +36,18 @@ class CRUDTranslation(CRUDMongoBase[Translation, TranslationCreate, TranslationU
         if module_name:
             raw_filter["modules"] = module_name
 
-        return await self.get_multi(db=db, filters=raw_filter, skip=skip, limit=limit)
+        return await self.get_multi(filters=raw_filter, skip=skip, limit=limit)
 
-    async def get_by_key(self, db: AgnosticDatabase, key: str) -> Optional[Translation]:
+    async def get_by_key(self, key: str) -> Optional[Translation]:
         """Get a translation by its key."""
-        return await self.get_by_field(db, field="key", value=key)
+        return await self.get_by_field(field="key", value=key)
 
-    async def get_by_module(self, db: AgnosticDatabase, module_name: str) -> List[Translation]:
+    async def get_by_module(self, module_name: str) -> List[Translation]:
         """Get all translations for a specific module."""
-        return await self.get_multi_by_fields(db, fields={"modules": module_name})
+        return await self.get_multi(filters={"modules": module_name})
 
     async def get_translation(
-        self, db: AgnosticDatabase, key: str, locale: str, module_name: Optional[str] = None
+        self, key: str, locale: str, module_name: Optional[str] = None
     ) -> Optional[str]:
         """
         Get a specific translation text by key and locale, with optional module override.
@@ -62,7 +60,7 @@ class CRUDTranslation(CRUDMongoBase[Translation, TranslationCreate, TranslationU
         Returns:
             Translation text or None if not found
         """
-        translation = await self.get_by_key(db, key=key)
+        translation = await self.get_by_key(key=key)
         if not translation:
             return None
 
@@ -81,7 +79,6 @@ class CRUDTranslation(CRUDMongoBase[Translation, TranslationCreate, TranslationU
 
     async def upsert_translation(
         self,
-        db: AgnosticDatabase,
         key: str,
         modules: List[str],
         translations: Optional[Dict[str, LocaleTranslationCreate]] = None,
@@ -110,7 +107,7 @@ class CRUDTranslation(CRUDMongoBase[Translation, TranslationCreate, TranslationU
             Updated Translation object
         """
         # Try to find existing translation
-        translation = await self.get_by_key(db, key=key)
+        translation = await self.get_by_key(key=key)
         now = datetime.now(timezone.utc)
 
         if not translation:
@@ -188,7 +185,6 @@ class CRUDTranslation(CRUDMongoBase[Translation, TranslationCreate, TranslationU
 
     async def upsert_module_override(
         self,
-        db: AgnosticDatabase,
         key: str,
         locale: str,
         module_name: str,
@@ -206,7 +202,7 @@ class CRUDTranslation(CRUDMongoBase[Translation, TranslationCreate, TranslationU
         Returns:
             Updated Translation object
         """
-        translation = await self.get_by_key(db, key=key)
+        translation = await self.get_by_key(key=key)
 
         if not translation:
             raise ValueError(f"Translation with key '{key}' not found")
@@ -228,7 +224,7 @@ class CRUDTranslation(CRUDMongoBase[Translation, TranslationCreate, TranslationU
         return translation
 
     async def get_translations_map(
-        self, db: AgnosticDatabase, locale: str, module_name: str, skip: int = 0, limit: int = None
+        self, locale: str, module_name: str, skip: int = 0, limit: int = None
     ) -> Dict[str, str]:
         """
         Get a flat map of all translations for a module and locale,
@@ -242,7 +238,7 @@ class CRUDTranslation(CRUDMongoBase[Translation, TranslationCreate, TranslationU
             Dictionary with translation keys and texts
         """
         translations = await self.get_multi(
-            db=db, filters={"modules": module_name}, skip=skip, limit=limit
+            filters={"modules": module_name}, skip=skip, limit=limit
         )
 
         result = {}
@@ -257,12 +253,12 @@ class CRUDTranslation(CRUDMongoBase[Translation, TranslationCreate, TranslationU
         return result
 
     async def delete_locale_translation(
-        self, db: AgnosticDatabase, key: str, locale: str
+        self, key: str, locale: str
     ) -> bool:
         """
         Remove a specific locale from a translation.
         """
-        translation = await self.get_by_key(db, key=key)
+        translation = await self.get_by_key(key=key)
         if not translation:
             return False
 

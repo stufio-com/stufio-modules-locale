@@ -12,12 +12,12 @@ from .config import settings
 class LocaleModule(ModuleInterface):
     """Locale and translation management module."""
 
-    __version__ = __version__
+    version = __version__
 
     def register_routes(self, app: FastAPI) -> None:
         """Register this module's routes with the FastAPI app."""
         # Register routes
-        app.include_router(api_router, prefix=self._routes_prefix)
+        app.include_router(api_router, prefix=self.routes_prefix)
 
     def get_middlewares(self) -> List[Tuple]:
         """Return middleware classes for this module.

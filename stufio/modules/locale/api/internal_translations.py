@@ -20,7 +20,6 @@ async def create_translation(
     module: str = Body(...),
     text: Optional[str] = Body(None),
     description: Optional[str] = Body(None),
-    db=Depends(deps.get_db),
 ) -> TranslationResponse:
     """
     Create a new translation.
@@ -40,18 +39,18 @@ async def create_translation(
         translation_in.translations = {locale: {"text": text}}
 
     # Check if translation key already exists
-    existing = await crud_translation.get_by_key(db=db, key=translation_in.key)
+    existing = await crud_translation.get_by_key(key=translation_in.key)
     if existing:
         # Check for new modules and add them to existing.modules if any
         new_modules = set(translation_in.modules) - set(existing.modules)
         if new_modules:
             existing.modules.extend(new_modules)
-            result = await crud_translation.update(db=db, db_obj=existing, obj_in={"modules": existing.modules})
+            result = await crud_translation.update(db_obj=existing, obj_in={"modules": existing.modules})
         else:
             raise HTTPException(status_code=400, detail=f"Translation with key '{translation_in.key}' already exists for all specified modules")
     else:
         # Create the translation
-        result = await crud_translation.create(db=db, obj_in=translation_in)
+        result = await crud_translation.create(translation_in)
 
         # Invalidate cache for all affected locales and modules
         if translation_in.translations:
@@ -67,13 +66,12 @@ async def create_translation(
 async def update_translation(
     update_in: TranslationUpdate,
     key: str = Body(...),
-    db=Depends(deps.get_db),
 ) -> TranslationResponse:
     """
     Update a translation by key.
     """
     # Find the translation
-    translation = await crud_translation.get_by_key(db=db, key=key)
+    translation = await crud_translation.get_by_key(key=key)
     if not translation:
         raise HTTPException(status_code=404, detail=f"Translation with key '{key}' not found")
     
@@ -83,7 +81,7 @@ async def update_translation(
     
     
     # Update the translation
-    result = await crud_translation.update(db=db, db_obj=translation, obj_in=update_in)
+    result = await crud_translation.update(db_obj=translation, obj_in=update_in)
     
     # Invalidate cache for affected locales
     if update_in.translations:

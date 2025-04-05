@@ -10,15 +10,15 @@ router = APIRouter()
 
 
 @router.get("/locales", response_model=List[LocaleResponse])
-async def list_locales(db = Depends(deps.get_db)):
+async def list_locales():
     return await crud_locale.get_multi(
-        db=db, filter_expression=Locale.active == True, skip=0, limit=None
+        filter_expression=Locale.active == True, skip=0, limit=None
     )
 
 
 @router.get("/locales/{locale_id}", response_model=LocaleResponse)
-async def read_locale(locale_id: str, db = Depends(deps.get_db)):
-    locale = await crud_locale.get(db=db, id=locale_id)
+async def read_locale(locale_id: str):
+    locale = await crud_locale.get(id=locale_id)
     if not locale:
         raise HTTPException(status_code=404, detail="Locale not found")
     return locale

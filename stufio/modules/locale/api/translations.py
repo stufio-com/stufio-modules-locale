@@ -17,7 +17,6 @@ async def read_translations_by_locale(
     module: str,
     skip: Optional[int] = 0,
     limit: Optional[int] = None,
-    db = Depends(deps.get_db),
 ) -> List[TranslationResponse]:
     """
     Retrieve all translations for a specific locale.
@@ -37,7 +36,7 @@ async def read_translations_by_locale(
 
     # Get translations map from database
     result = await crud_translation.get_translations_map(
-        db=db, locale=locale, module_name=module, skip=skip, limit=limit
+        locale=locale, module_name=module, skip=skip, limit=limit
     )
 
     # Cache for 5 minutes
@@ -52,7 +51,6 @@ async def get_translation_text(
     key: str = Body(...),
     locale: str = Body(...),
     module: Optional[str] = Body(None),
-    db = Depends(deps.get_db),
 ) -> Dict[str, str]:
     """
     Get just the text for a specific translation, locale, and optional module.
@@ -65,7 +63,7 @@ async def get_translation_text(
     
     # Get from database with possible module override
     text = await crud_translation.get_translation(
-        db=db, key=key, locale=locale, module_name=module
+        key=key, locale=locale, module_name=module
     )
     
     if text is None:
