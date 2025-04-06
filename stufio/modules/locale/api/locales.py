@@ -1,4 +1,3 @@
-from celery.worker.control import active
 from fastapi import APIRouter, Depends, HTTPException
 from typing import List, Optional
 from ..schemas.locale import LocaleResponse
