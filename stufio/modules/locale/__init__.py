@@ -2,11 +2,10 @@ from fastapi import FastAPI
 from typing import List, Any, Tuple
 
 from stufio.core.module_registry import ModuleInterface
-from .api import router as api_router
-from .models import Locale, Translation
 from .middleware import LocaleMiddleware
 from .__version__ import __version__
-from .config import settings
+from .config import LocaleSettings
+from .settings import settings_registry
 
 
 class LocaleModule(ModuleInterface):
@@ -16,6 +15,7 @@ class LocaleModule(ModuleInterface):
 
     def register_routes(self, app: FastAPI) -> None:
         """Register this module's routes with the FastAPI app."""
+        from .api import router as api_router
         # Register routes
         app.include_router(api_router, prefix=self.routes_prefix)
 
@@ -27,10 +27,6 @@ class LocaleModule(ModuleInterface):
         """
         return [(LocaleMiddleware, {}, {})]  # Fix: use empty list for args
 
-    def get_models(self) -> List[Any]:
-        """Return this module's database models."""
-        return [Locale, Translation]
-
 
 # For backward compatibility
-__all__ = ["api_router", "settings", "LocaleModule"]
+__all__ = ["__version__", "LocaleSettings", "LocaleModule"]
