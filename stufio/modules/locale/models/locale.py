@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from odmantic import Model, Field, Index
-from pydantic import ConfigDict
+from odmantic import Field, Index
 
 from stufio.db.mongo_base import MongoBase, datetime_now_sec
 
@@ -18,13 +17,10 @@ class Locale(MongoBase):
     created_at: datetime = Field(default_factory=datetime_now_sec)
     updated_at: datetime = Field(default_factory=datetime_now_sec)
 
-    model_config = ConfigDict(
-        collection="i18n_locales",
-        indexes=[
+    model_config = {
+        "collection": "i18n_locales",
+        "indexes": lambda: [
             Index("code", "country", unique=True),
-            Index(
-                "active",
-                "code",
-            ),
+            Index("active", "code"),
         ],
-    )
+    }

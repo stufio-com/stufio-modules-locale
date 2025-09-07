@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import Dict, Optional, List
 from odmantic import Field, Index, EmbeddedModel
-from pydantic import ConfigDict
 
 from stufio.db.mongo_base import MongoBase, datetime_now_sec
 
@@ -33,9 +32,9 @@ class Translation(MongoBase):
     created_at: datetime = Field(default_factory=datetime_now_sec)
     updated_at: datetime = Field(default_factory=datetime_now_sec)
 
-    model_config = ConfigDict(
-        collection="i18n_translations",
-        indexes=[
+    model_config = {
+        "collection": "i18n_translations",
+        "indexes": lambda: [
             Index("key", unique=True),
         ],
-    )
+    }
